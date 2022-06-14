@@ -1,0 +1,37 @@
+{
+	"name": "ot-ws-server",
+	"version": "0.0.1",
+	"private": true,
+	"description": "OT server",
+	"main": "dist/index.js",
+	"author": "Damir Yusipov",
+	"license": "MIT",
+	"scripts": {
+    "start": "ts-node src/index.ts"
+	},
+	"dependencies": {
+		"@sinclair/typebox": "^0.20.4",
+		"wsapix": "^0.5.0",
+		"uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0"
+	},
+	"devDependencies": {
+		"@types/jest": "^26.0.24",
+		"@types/ws": "^8.5.3",
+		"jest": "^26.6.3",
+		"ts-jest": "^26.4.4",
+		"ts-node": "^10.8.0",
+		"tslint": "^6.1.3",
+		"typescript": "^4.6.4"
+	},
+	"jest": {
+		"transform": {
+			".(ts|tsx)": "ts-jest"
+		},
+		"testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+		"moduleFileExtensions": [
+			"ts",
+			"tsx",
+			"js"
+		]
+	}
+}
