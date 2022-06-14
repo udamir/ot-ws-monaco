@@ -305,8 +305,8 @@ export class EditorClient implements IEditorClient {
   };
 
   /** Handles `ready` event from Database Adapter */
-  protected _handleDatabaseReady = (): void => {
-    this._trigger(EditorClientEvent.Ready, true);
+  protected _handleDatabaseReady = (status: boolean): void => {
+    this._trigger(EditorClientEvent.Ready, status);
   };
 
   /** Handles `retry` event from Database Adapter */

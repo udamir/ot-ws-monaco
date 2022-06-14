@@ -89,8 +89,8 @@ const onDocumentReady = (): void => {
     userName,
   });
 
-  wsMonaco.on(EditorClientEvent.Ready, () => {
-    editor.updateOptions({ readOnly: false });
+  wsMonaco.on(EditorClientEvent.Ready, (status: boolean) => {
+    editor.updateOptions({ readOnly: !status });
   });
 
   window.wsMonaco = wsMonaco;

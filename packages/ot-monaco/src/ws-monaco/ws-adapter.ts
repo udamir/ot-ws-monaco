@@ -15,6 +15,11 @@ export type TWSAdapterConstructionOptions = {
   userName?: string;
 };
 
+type TSnapshot = { 
+  revision: number
+  document?: TPlainTextOperation
+  operations: TPlainTextOperation[]
+} 
 
 type TRevision = { 
   userId: string
@@ -84,13 +89,13 @@ export class WSAdapter implements IDatabaseAdapter {
 
     }
     ws.onclose = () => {
-      // this._trigger(DatabaseAdapterEvent.Error, undefined)
+      this._trigger(DatabaseAdapterEvent.Ready, false)
     }
 
     ws.onmessage = ({ data }) => {
       const msg: any = JSON.parse(data)
       const { type, ...payload } = msg
-      console.log("ws message", type, payload)
+      console.debug("ws message", type, payload)
       switch (type) {
         case "user:connected": 
           this._users.set(payload.userId, { userColor: payload.userColor, userName: payload.userName })
@@ -118,17 +123,17 @@ export class WSAdapter implements IDatabaseAdapter {
           })
  
         case "user:operation": return this._handleUserOperation(payload)
-        case "server:snapshot": return this._handleSnapshot(payload.revison, payload.operations)
+        case "server:snapshot": return this._handleSnapshot(payload)
       }
     }
 
     return ws
   }
 
-  protected _handleSnapshot (revision: number, operations: TPlainTextOperation[]) {
-    console.log("snapshot", revision, operations)
+  protected _handleSnapshot ({ revision, operations, document }: TSnapshot) {
+    console.debug("snapshot", revision, operations, document)
     this._revision = revision || 0
-    this._document = new PlainTextOperation()
+    this._document = document ? PlainTextOperation.fromJSON(document) : new PlainTextOperation()
 
     for(const operation of operations) {
       const op = PlainTextOperation.fromJSON(operation)
@@ -150,10 +155,10 @@ export class WSAdapter implements IDatabaseAdapter {
    */
   protected _handleUserOperation({ userId, revision, operation }: TRevision): void {
     this._revision++
-    console.log("operation", this._sent, userId, revision, operation)
+    console.debug("operation", this._sent, userId, revision, operation)
     const op = PlainTextOperation.fromJSON(operation)
     if (!this._document.canMergeWith(op)) {
-      console.log("Invalid operation", revision, op.toString)
+      console.debug("Invalid operation", revision, op.toString)
       return;
     }
     this._document = this._document.compose(op);
@@ -196,7 +201,7 @@ export class WSAdapter implements IDatabaseAdapter {
     event: Key,
     payload: TDatabaseAdapterEventArgs[Key]
   ): void {
-    console.log("trigger", event, payload)
+    console.debug("trigger", event, payload)
     return this._emitter.emit(event, payload);
   }
 
@@ -204,7 +209,7 @@ export class WSAdapter implements IDatabaseAdapter {
    * Tests if any operation has been done yet on the document.
    */
   isHistoryEmpty(): boolean {
-    return true
+    return this._revision === 0;
   }
   /**
    * Returns current state of the document (could be `null`).
@@ -217,28 +222,27 @@ export class WSAdapter implements IDatabaseAdapter {
    * @param userId - Unique Identifier for current user.
    */
   setUserId(userId: string): void {
-    console.log("setUserId", userId)
+    console.debug("setUserId", userId)
   }
   /**
    * Set Color to mark current user's Cursor.
    * @param userColor - Hexadecimal Color code of current user's Cursor.
    */
   setUserColor(userColor: string): void {
-    console.log("setUserColor", userColor)
+    console.debug("setUserColor", userColor)
   }
   /**
    * Set User Name to mark current user's Cursor.
    * @param userName - Name/Short Name of current user.
    */
   setUserName(userName: string): void {
-    console.log("setUserName", userName)
+    console.debug("setUserName", userName)
   }
   /**
    * Tests if `clientId` matches current user's ID.
    * @param clientId - Unique Identifier for user.
    */
   isCurrentUser(clientId: string): boolean {
-    console.log("isCurrentUser", clientId, this.userId)
     return this.userId === clientId
   }
   /**
@@ -249,7 +253,7 @@ export class WSAdapter implements IDatabaseAdapter {
    * @param operation - Plain Text Operation to sent to server.
    */
   async sendOperation(operation: IPlainTextOperation): Promise<boolean> {
-    console.log("sendOperation", operation.toString(), this._revision)
+    console.debug("sendOperation", operation.toString(), this._revision)
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) { return false }
 
     /** Sanity check that this operation is valid. */

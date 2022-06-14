@@ -1,6 +1,7 @@
 import { WebSocket } from "uWebSockets.js"
 import { WsapixChannel } from "wsapix"
 import { Type, Static } from "@sinclair/typebox"
+import { TextState } from "./text-state";
 
 export type TCursor = {
   /** Starting Position of the Cursor/Selection */
@@ -18,12 +19,11 @@ export interface IClientState {
   userColor?: string;
   /** Name/Short Name of the Remote User */
   userName?: string;
+  /** Requested revision */
+  revision?: number
 }
 
-const state = {
-  operations: [[0, "test message"]] as any[],
-  revision: 0
-} 
+const state = new TextState("test message")
 
 export const ot = new WsapixChannel<WebSocket, IClientState>({ path: "/ot" })
 
@@ -39,7 +39,8 @@ ot.use((client) => {
   const userId = decodeURI(params.userId) || client.headers['sec-websocket-key'] as string
   const userName = decodeURI(params.name)
   const userColor = decodeURI(params.color)
-  client.state = { userId, userName, userColor, cursor: null }
+  const revision = isNaN(+params.revision || 0) ? +params.revision : 0
+  client.state = { userId, userName, userColor, cursor: null, revision }
 })
 
 /* Client messages */
@@ -100,8 +101,7 @@ ot.clientMessage<OperationMessageSchema>({ type: "operation:message"}, operation
       operation: data.operation
     })
   })
-  state.operations.push(data.operation)
-  state.revision++
+  state.clientOperation(data.operation)
 })
 
 /* Server messages */
@@ -144,7 +144,7 @@ export const userConnectedSchema = {
   description: "User online status update",
   payload: Type.Strict(Type.Object({
     type: Type.String({ const: "user:connected", description: "Message type" }),
-    clientId: Type.String({ description: "User id" }),
+    userId: Type.String({ description: "User id" }),
     userName: Type.String({ description: "User name" }),
     cursor: Type.Optional(Type.Object({
       position: Type.Number({ description: "Cursor position" }),
@@ -163,7 +163,7 @@ export const serverSnapshotSchema = {
   description: "Snapshot of server state",
   payload: Type.Strict(Type.Object({
     type: Type.String({ const: "server:snapshot", description: "Message type" }),
-    document: Type.String({ description: "Base document" }),
+    document: Type.Optional(Type.String({ description: "Base document" })),
     operations: Type.Array(operationType, { description: "User name" }),
   }, { $id: "server:snapshot" }))
 }
@@ -191,7 +191,13 @@ ot.on("connect", (client) => {
     c.send({ type: "user:connected", ...client.state })
     client.send({ type: "user:connected", ...c.state })
   })
-  client.send({ type: "server:snapshot", revision: state.revision, operations: state.operations })
+  const revision = client.state.revision || 0
+  client.send({
+    type: "server:snapshot",
+    revision: state.revision,
+    document: state.getSnapshot(revision),
+    operations: state.getOperations(revision)
+  })
 })
 
 ot.on("disconnect", (client) => {

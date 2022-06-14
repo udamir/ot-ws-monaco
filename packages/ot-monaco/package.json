@@ -1,6 +1,6 @@
 {
   "name": "ot-ws-monaco",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Example usage of Monaco as Real-time collaborative editor via websocket",
   "main": "index.js",

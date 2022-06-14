@@ -1,6 +1,6 @@
 {
 	"name": "ot-ws-server",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"private": true,
 	"description": "OT server",
 	"main": "dist/index.js",

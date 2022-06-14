@@ -786,7 +786,6 @@ export class MonacoAdapter implements IEditorAdapter {
   protected _applyChangesToMonaco(
     changes: monaco.editor.IIdentifiedSingleEditOperation[]
   ): void {
-    console.log("_applyChangesToMonaco", changes)
     const readOnly = this._monaco.getOption(
       monaco.editor.EditorOption.readOnly
     );
