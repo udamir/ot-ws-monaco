@@ -9,8 +9,8 @@
     "clean": "lerna clean",
     "boot": "lerna bootstrap",
     "test": "jest --collectCoverage --verbose --runInBand --forceExit",
-    "server": "lerna run start --scope ot-server --stream",
-    "monaco": "lerna run start --scope ot-monaco --stream",
+    "server": "lerna run start --scope ot-ws-server --stream",
+    "monaco": "lerna run start --scope ot-ws-monaco --stream",
     "graph": "lerna list --graph"
   },
   "devDependencies": {
